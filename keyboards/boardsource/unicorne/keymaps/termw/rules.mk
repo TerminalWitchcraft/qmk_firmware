@@ -1,0 +1,8 @@
+COMBO_ENABLE = yes
+RGB_MATRIX_ENABLE = yes
+KEY_OVERRIDE_ENABLE = yes
+REPEAT_KEY_ENABLE = yes
+CAPS_WORD_ENABLE = yes
+WPM_ENABLE = yes
+OLED_ENABLE = yes
+VPATH += keyboards/gboards
