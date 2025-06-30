@@ -1,13 +1,11 @@
 #include QMK_KEYBOARD_H
 #include "g/keymap_combo.h"
-#if __has_include("keymap.h")
-    #include "keymap.h"
-#endif
 
 #define ANIM_INVERT false
 #define ANIM_RENDER_WPM true
 #define FAST_TYPE_WPM 40 //Switch to fast animation when over words per minute
 #ifdef OLED_ENABLE
+#include "lib/oled.h"
 #include "demon.c"
 #endif
 
@@ -15,12 +13,13 @@
 #define _NAV 1
 #define _SYS 2
 
-enum custom_keycodes {
-    MAGIC_SHIFT = SAFE_RANGE,
-    FENCED_CB,
-    M_UPDIR
-};
+#define MAGIC_SHIFT RSFT_T(KC_0)
+#define MAGIC_TAB LSFT_T(KC_TAB)
 
+enum custom_keycodes {
+    FENCED_CB = SAFE_RANGE,
+    M_UPDIR,
+};
 
 /* THIS FILE WAS GENERATED!
  *
@@ -29,17 +28,17 @@ enum custom_keycodes {
  */
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [_BASE] = LAYOUT_split_3x6_3(KC_TAB, KC_W, KC_L, KC_Y, KC_P, KC_B,                                 KC_Z, KC_F, KC_O, KC_U, KC_QUOT, MO(_SYS),
-                                 CW_TOGG, KC_C, CTL_T(KC_R), OPT_T(KC_S), GUI_T(KC_T), KC_G,          KC_M, GUI_T(KC_N), OPT_T(KC_E), CTL_T(KC_I), KC_A, KC_SCLN,
+    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L, KC_Y, KC_P, KC_B,                                 KC_Z, KC_F, KC_O, KC_U, KC_QUOT, MO(_SYS),
+                                 KC_TAB, KC_C, CTL_T(KC_R), OPT_T(KC_S), GUI_T(KC_T), KC_G,          KC_M, GUI_T(KC_N), OPT_T(KC_E), CTL_T(KC_I), KC_A, KC_SCLN,
                                  KC_LSFT, KC_Q, KC_J, KC_V, KC_D, KC_K,                                KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, KC_ESC,
-                                           KC_TAB, LT(_NAV, KC_SPC), KC_ESC, KC_ENT, LT(_NAV, KC_BSPC), RSFT_T(MAGIC_SHIFT)),
+                                           MAGIC_TAB, LT(_NAV, KC_SPC), KC_ESC, KC_ENT, LT(_NAV, KC_BSPC), MAGIC_SHIFT),
 
     [_NAV] = LAYOUT_split_3x6_3(_______, _______, KC_7, KC_8, KC_9, _______,     _______, _______, _______, _______, _______, _______,
                                 _______, _______, KC_4, KC_5, KC_6, KC_0,        _______, KC_LEFT, KC_DOWN, KC_UP,  KC_RIGHT, _______,
                                 _______, _______, KC_1, KC_2, KC_3, _______,     _______, _______, _______, _______, _______, _______,
                                                   _______, _______, _______,     _______, _______, _______),
 
-    [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, _______,
+    [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
                                 EE_CLR,  _______, _______, _______, _______, _______,       RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
                                 _______, _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,
                                                            _______, _______, _______,       _______, _______, _______)
@@ -50,8 +49,6 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 const key_override_t tilde_esc_override = ko_make_basic(MOD_MASK_SHIFT, KC_ESC, KC_GRV);
 // GUI + esc = ~
 const key_override_t grave_esc_override = ko_make_basic(MOD_MASK_GUI, KC_ESC, S(KC_GRV));
-// Shift + TAB = ALT REP
-const key_override_t shift_tab_override = ko_make_basic(MOD_MASK_SHIFT, KC_TAB, QK_AREP);
 // Shift + . = :
 const key_override_t dot_colon_override = ko_make_basic(MOD_MASK_SHIFT, KC_DOT, KC_COLN);
 // Shift + , = ;
@@ -81,7 +78,6 @@ const key_override_t hash_dollar_override = ko_make_basic(MOD_MASK_SHIFT, KC_HAS
 const key_override_t *key_overrides[] = {
 	&tilde_esc_override,
 	&grave_esc_override,
-    &shift_tab_override,
     &dot_colon_override,
     &comma_semicolon_override,
     &question_exclamation_override,
@@ -95,15 +91,34 @@ const key_override_t *key_overrides[] = {
     &and_or_override,
     &hash_dollar_override
 };
+bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
+                            uint8_t* remembered_mods) {
+    switch (keycode) {
+        case MAGIC_SHIFT:
+        case MAGIC_TAB:
+        case KC_TAB:
+            return false;
+    }
+    return true;  // Other keys can be repeated.
+}
 
 bool should_repeat(uint16_t keycode) {
     switch (keycode) {
+        case CTL_T(KC_R):
+        case OPT_T(KC_S):
+        case GUI_T(KC_T):
+        case GUI_T(KC_N):
+        case OPT_T(KC_E):
+        case CTL_T(KC_I):
         case KC_A ... KC_Z:
-        case KC_TAB:
         case KC_DOT:
         case KC_GRV:
         case KC_ASTR:
         case KC_HASH:
+        case KC_LEFT:
+        case KC_RIGHT:
+        case KC_UP:
+        case KC_DOWN:
             return true;
     }
     return false;
@@ -111,6 +126,7 @@ bool should_repeat(uint16_t keycode) {
 
 uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
     switch (keycode) {
+        case KC_ASTR: return KC_HASH;
         case KC_GRV: return FENCED_CB;
         case KC_DOT: return M_UPDIR;
         case KC_TAB: return S(KC_TAB);
@@ -121,28 +137,38 @@ uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
         case MAGIC_SHIFT:
-            // only customize the tap behavior
-            // MAGIC_SHIFT is usually used with mod tap
-            if (record->tap.count) {
+            if (record->tap.count) {  // On tap.
                 if (should_repeat(get_last_keycode())) {
                     // repeat key
-                    tap_code16(QK_REP);
+                    repeat_key_invoke(&record->event);
+
                 } else {
                     // send sticky shift
-                    tap_code16(OSM(MOD_RSFT));
+                    set_oneshot_mods(MOD_BIT(KC_RSFT));
+                }
+                return false;  // Skip default handling.
+            }
+            return true;
+        case MAGIC_TAB:
+            if (record->tap.count) {
+                if(should_repeat(get_last_keycode())) {
+                    alt_repeat_key_invoke(&record->event);
+                    return false;
                 }
             }
-            return false;
-        case M_UPDIR: SEND_STRING(/*.*/"./"); return false;
-        case FENCED_CB: SEND_STRING("``"); return false;
+            return true;
+        case M_UPDIR: SEND_STRING("./"); return false;
+        case FENCED_CB: SEND_STRING("`"); return false;
     }
     return true; // Return true to allow QMK to process the key as normal (though in this case, we've replaced its behavior)
 };
 
 #ifdef OLED_ENABLE
 bool oled_task_user(void) {
-  if (!is_keyboard_master()) {
+  if (is_keyboard_master()) {
     oled_render_anim();
+  } else {
+    render_layer_state();
   }
   return false;
 }
