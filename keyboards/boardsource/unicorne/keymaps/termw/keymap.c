@@ -12,13 +12,15 @@
 #define _BASE 0
 #define _NAV 1
 #define _SYS 2
+#define MAGIC_REPEAT LSFT_T(KC_0)
 
-#define MAGIC_SHIFT RSFT_T(KC_0)
-#define MAGIC_TAB LSFT_T(KC_TAB)
-
+// Custom keycodes
 enum custom_keycodes {
     FENCED_CB = SAFE_RANGE,
     M_UPDIR,
+    VI_WQA,
+    VI_ZQ,
+    VI_W
 };
 
 /* THIS FILE WAS GENERATED!
@@ -28,14 +30,14 @@ enum custom_keycodes {
  */
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L, KC_Y, KC_P, KC_B,                                 KC_Z, KC_F, KC_O, KC_U, KC_QUOT, MO(_SYS),
-                                 KC_TAB, KC_C, CTL_T(KC_R), OPT_T(KC_S), GUI_T(KC_T), KC_G,          KC_M, GUI_T(KC_N), OPT_T(KC_E), CTL_T(KC_I), KC_A, KC_SCLN,
-                                 KC_LSFT, KC_Q, KC_J, KC_V, KC_D, KC_K,                                KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, KC_ESC,
-                                           MAGIC_TAB, LT(_NAV, KC_SPC), KC_ESC, KC_ENT, LT(_NAV, KC_BSPC), MAGIC_SHIFT),
+    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L, KC_Y, KC_P, KC_B,                              KC_Z, KC_F,        KC_O,        KC_U,        KC_QUOT, MO(_SYS),
+                                 KC_TAB, KC_C, CTL_T(KC_R), OPT_T(KC_S), GUI_T(KC_T), KC_G,          KC_M, GUI_T(KC_N), OPT_T(KC_E), CTL_T(KC_I), KC_A,    KC_SCLN,
+                                 KC_TAB, KC_Q, KC_J, KC_V, KC_D, KC_K,                               KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_SCLN,
+                                           MAGIC_REPEAT, KC_SPC, LT(_NAV, KC_ESC), LT(_NAV, KC_ENT), KC_BSPC, OSM(MOD_RSFT)),
 
-    [_NAV] = LAYOUT_split_3x6_3(_______, _______, KC_7, KC_8, KC_9, _______,     _______, _______, _______, _______, _______, _______,
-                                _______, _______, KC_4, KC_5, KC_6, KC_0,        _______, KC_LEFT, KC_DOWN, KC_UP,  KC_RIGHT, _______,
-                                _______, _______, KC_1, KC_2, KC_3, _______,     _______, _______, _______, _______, _______, _______,
+    [_NAV] = LAYOUT_split_3x6_3(_______, _______, KC_7, KC_8, KC_9, _______,     VI_ZQ, VI_WQA, G(KC_C), G(KC_V), _______, _______,
+                                _______, _______, KC_4, KC_5, KC_6, KC_0,        G(KC_A), KC_LEFT, KC_DOWN, KC_UP,   KC_RIGHT, _______,
+                                _______, _______, KC_1, KC_2, KC_3, _______,     VI_W, KC_PGUP, C(KC_D), C(KC_U), KC_PGDN, _______,
                                                   _______, _______, _______,     _______, _______, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
@@ -46,9 +48,9 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 
 // Shift + esc = `
-const key_override_t tilde_esc_override = ko_make_basic(MOD_MASK_SHIFT, KC_ESC, KC_GRV);
+const key_override_t tilde_esc_override = ko_make_basic(MOD_MASK_SHIFT, LT(_NAV, KC_ESC), KC_GRV);
 // GUI + esc = ~
-const key_override_t grave_esc_override = ko_make_basic(MOD_MASK_GUI, KC_ESC, S(KC_GRV));
+const key_override_t grave_esc_override = ko_make_basic(MOD_MASK_GUI, LT(_NAV, KC_ESC), S(KC_GRV));
 // Shift + . = :
 const key_override_t dot_colon_override = ko_make_basic(MOD_MASK_SHIFT, KC_DOT, KC_COLN);
 // Shift + , = ;
@@ -91,37 +93,26 @@ const key_override_t *key_overrides[] = {
     &and_or_override,
     &hash_dollar_override
 };
+
+#ifdef COMBO_MUST_TAP_PER_COMBO
+bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
+    // If you want all combos to be tap-only, just uncomment the next line
+    return true;
+}
+#endif
+
 bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
                             uint8_t* remembered_mods) {
     switch (keycode) {
-        case MAGIC_SHIFT:
-        case MAGIC_TAB:
-        case KC_TAB:
+        case KC_A ... KC_Z:
+            if ((*remembered_mods & ~MOD_MASK_SHIFT) == 0) {
+                *remembered_mods &= ~MOD_MASK_SHIFT;
+            }
+            break;
+        case MAGIC_REPEAT:
             return false;
     }
     return true;  // Other keys can be repeated.
-}
-
-bool should_repeat(uint16_t keycode) {
-    switch (keycode) {
-        case CTL_T(KC_R):
-        case OPT_T(KC_S):
-        case GUI_T(KC_T):
-        case GUI_T(KC_N):
-        case OPT_T(KC_E):
-        case CTL_T(KC_I):
-        case KC_A ... KC_Z:
-        case KC_DOT:
-        case KC_GRV:
-        case KC_ASTR:
-        case KC_HASH:
-        case KC_LEFT:
-        case KC_RIGHT:
-        case KC_UP:
-        case KC_DOWN:
-            return true;
-    }
-    return false;
 }
 
 uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
@@ -129,36 +120,59 @@ uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
         case KC_ASTR: return KC_HASH;
         case KC_GRV: return FENCED_CB;
         case KC_DOT: return M_UPDIR;
-        case KC_TAB: return S(KC_TAB);
+        case KC_TAB:
+            {
+                bool shifted = (mods & MOD_MASK_SHIFT);
+                if (shifted) {        // If the last key was Shift + Tab,
+                    return KC_TAB;    // ... the reverse is Tab.
+                } else {              // Otherwise, the last key was Tab,
+                    return S(KC_TAB); // ... and the reverse is Shift + Tab.
+                }
+            }
     }
     return KC_TRNS;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
-        case MAGIC_SHIFT:
-            if (record->tap.count) {  // On tap.
-                if (should_repeat(get_last_keycode())) {
-                    // repeat key
-                    repeat_key_invoke(&record->event);
-
-                } else {
-                    // send sticky shift
-                    set_oneshot_mods(MOD_BIT(KC_RSFT));
-                }
-                return false;  // Skip default handling.
-            }
-            return true;
-        case MAGIC_TAB:
+        case MAGIC_REPEAT:
             if (record->tap.count) {
-                if(should_repeat(get_last_keycode())) {
+                uint8_t mod_state = get_mods();
+                if (mod_state & MOD_MASK_SHIFT) {
+                    del_mods(MOD_MASK_SHIFT);
                     alt_repeat_key_invoke(&record->event);
-                    return false;
+                    set_mods(mod_state);
+                } else {
+                    repeat_key_invoke(&record->event);
                 }
+                return false;
             }
             return true;
-        case M_UPDIR: SEND_STRING("./"); return false;
-        case FENCED_CB: SEND_STRING("`"); return false;
+        case M_UPDIR:
+            if (record->event.pressed) {
+                SEND_STRING("./");
+            }
+            return false;
+        case FENCED_CB:
+            if (record->event.pressed) {
+                SEND_STRING("`"); return false;
+            }
+            return false;
+        case VI_W:
+            if (record->event.pressed) {
+                SEND_STRING(":w\n"); return true;
+            }
+            return false;
+        case VI_WQA:
+            if (record->event.pressed) {
+                SEND_STRING(":wqa\n"); return true;
+            }
+            return false;
+        case VI_ZQ:
+            if (record->event.pressed) {
+                SEND_STRING("ZQ"); return true;
+            }
+            return false;
     }
     return true; // Return true to allow QMK to process the key as normal (though in this case, we've replaced its behavior)
 };

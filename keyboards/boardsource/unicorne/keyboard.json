@@ -54,8 +54,8 @@
     "rgb_matrix": {
         "animations": {
             "raindrops": true,
-            "startlight": true,
-            "startlight_smooth": true,
+            "starlight": true,
+            "starlight_smooth": true,
             "breathing": true,
             "gradient_left_right": true,
             "gradient_up_down": true
