@@ -35,14 +35,14 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                  KC_TAB,  KC_Q, KC_J,        KC_V,        KC_D,        KC_K,        KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_SCLN,
                                                      LT(_NAV, KC_ESC), KC_SPC,  MAGIC_REPEAT,  OSM(MOD_RSFT),  KC_BSPC, LT(_NAV, KC_ENT)),
 
-    [_NAV] = LAYOUT_split_3x6_3(_______, _______, C(KC_U), KC_UP,   C(KC_D),  KC_PGUP,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
-                                _______, G(KC_A), KC_LEFT, KC_DOWN, KC_RIGHT, KC_PGDN,     KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
-                                _______, _______, _______, VI_W,    G(KC_C),  G(KC_V),     VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
+    [_NAV] = LAYOUT_split_3x6_3(_______, KC_PGUP, C(KC_U), KC_UP,   C(KC_D),  _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
+                                _______, G(KC_A), KC_LEFT, KC_DOWN, KC_RIGHT, _______,     KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
+                                _______, KC_PGDN, G(KC_X), G(KC_C), G(KC_V),  VI_W,        VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
                                                            _______, _______,  _______,     _______, _______, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
-                                EE_CLR,  _______, _______, _______, _______, _______,       RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
-                                _______, _______, _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,
+                                _______,  _______, _______, _______, _______, _______,       RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
+                                _______, _______,  _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,
                                                            _______, _______, _______,       _______, _______, _______)
 };
 
@@ -195,3 +195,28 @@ bool oled_task_user(void) {
   return false;
 }
 #endif
+
+bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
+    if (host_keyboard_led_state().caps_lock) {
+        for (uint8_t i = led_min; i < led_max; i++) {
+            if (g_led_config.flags[i] & LED_FLAG_KEYLIGHT) {
+                rgb_matrix_set_color(i, RGB_RED);
+            }
+        }
+    }
+    if (get_highest_layer(layer_state) > 0) {
+        uint8_t layer = get_highest_layer(layer_state);
+
+        for (uint8_t row = 0; row < MATRIX_ROWS; ++row) {
+            for (uint8_t col = 0; col < MATRIX_COLS; ++col) {
+                uint8_t index = g_led_config.matrix_co[row][col];
+
+                if (index >= led_min && index < led_max && index != NO_LED &&
+                keymap_key_to_keycode(layer, (keypos_t){col,row}) > KC_TRNS) {
+                    rgb_matrix_set_color(index, RGB_CORAL);
+                }
+            }
+        }
+    }
+    return false;
+}
