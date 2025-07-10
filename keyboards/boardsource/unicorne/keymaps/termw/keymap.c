@@ -16,8 +16,7 @@
 
 // Custom keycodes
 enum custom_keycodes {
-    FENCED_CB = SAFE_RANGE,
-    M_UPDIR,
+    M_UPDIR = SAFE_RANGE,
     VI_WQA,
     VI_ZQ,
     VI_W
@@ -31,18 +30,18 @@ enum custom_keycodes {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L,        KC_Y,        KC_P,        KC_B,        KC_Z, KC_F,        KC_O,        KC_U,        KC_QUOT, MO(_SYS),
-                                 QK_LLCK, KC_C, CTL_T(KC_R), OPT_T(KC_S), GUI_T(KC_T), KC_G,        KC_M, GUI_T(KC_N), OPT_T(KC_E), CTL_T(KC_I), KC_A,    QK_LLCK,
+                                 QK_LLCK, KC_C, CTL_T(KC_R), LALT_T(KC_S), GUI_T(KC_T), KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A,    QK_LLCK,
                                  KC_TAB,  KC_Q, KC_J,        KC_V,        KC_D,        KC_K,        KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_SCLN,
                                                      LT(_NAV, KC_ESC), KC_SPC,  MAGIC_REPEAT,  OSM(MOD_RSFT),  KC_BSPC, LT(_NAV, KC_ENT)),
 
-    [_NAV] = LAYOUT_split_3x6_3(_______, KC_PGUP, C(KC_U), KC_UP,   C(KC_D),  _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
-                                _______, G(KC_A), KC_LEFT, KC_DOWN, KC_RIGHT, _______,     KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
-                                _______, KC_PGDN, G(KC_X), G(KC_C), G(KC_V),  VI_W,        VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
+    [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_D), C(KC_U), G(KC_C), _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
+                                _______, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
+                                _______, G(KC_A), KC_PGDN, KC_PGUP, G(KC_V),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
                                                            _______, _______,  _______,     _______, _______, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
-                                _______,  _______, _______, _______, _______, _______,       RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
-                                _______, _______,  _______, _______, _______, _______,       _______, _______, _______, _______, _______, _______,
+                                _______,  _______, _______, _______, _______, _______,      RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
+                                _______, _______,  _______, _______, _______, _______,      _______, _______, _______, _______, _______, _______,
                                                            _______, _______, _______,       _______, _______, _______)
 };
 
@@ -117,6 +116,8 @@ bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
                 *remembered_mods &= ~MOD_MASK_SHIFT;
             }
             break;
+        case KC_ESC:
+        case LT(_NAV, KC_ESC):
         case MAGIC_REPEAT:
             return false;
     }
@@ -126,7 +127,6 @@ bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
 uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
     switch (keycode) {
         case KC_ASTR: return KC_HASH;
-        case KC_GRV: return FENCED_CB;
         case KC_DOT: return M_UPDIR;
         case KC_TAB:
             {
@@ -159,11 +159,6 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         case M_UPDIR:
             if (record->event.pressed) {
                 SEND_STRING("./");
-            }
-            return false;
-        case FENCED_CB:
-            if (record->event.pressed) {
-                SEND_STRING("`"); return false;
             }
             return false;
         case VI_W:
