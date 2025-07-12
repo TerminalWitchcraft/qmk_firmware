@@ -11,8 +11,9 @@
 
 #define _BASE 0
 #define _NAV 1
-#define _SYS 2
-#define MAGIC_REPEAT LSFT_T(KC_0)
+#define _MOUSE 2
+#define _SYS 3
+#define MAGIC_REPEAT LT(_MOUSE, KC_0)
 
 // Custom keycodes
 enum custom_keycodes {
@@ -38,6 +39,11 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
                                 _______, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
                                 _______, G(KC_A), KC_PGDN, KC_PGUP, G(KC_V),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
                                                            _______, _______,  _______,     _______, _______, _______),
+
+    [_MOUSE] = LAYOUT_split_3x6_3(_______, _______, _______, MS_UP, _______, _______,   _______, _______, MS_WHLU, _______, _______, _______,
+                                  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, _______, _______, MS_WHLL, MS_WHLD, MS_WHLR, _______, _______,
+                                  _______, _______, _______, _______, _______, _______,   _______, _______, _______, _______, _______, _______,
+                                                           _______, MS_BTN2,  _______,     MS_BTN3, MS_BTN1, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
                                 _______,  _______, _______, _______, _______, _______,      RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
@@ -139,6 +145,13 @@ uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
             }
     }
     return KC_TRNS;
+}
+
+bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode, keyrecord_t *record) {
+    if (layer_state_is(_MOUSE)) {
+        return false;
+    }
+    return true;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
