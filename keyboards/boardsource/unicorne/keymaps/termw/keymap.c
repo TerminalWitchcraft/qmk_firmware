@@ -30,20 +30,20 @@ enum custom_keycodes {
  */
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L,        KC_Y,        KC_P,        KC_B,        KC_Z, KC_F,        KC_O,        KC_U,        KC_QUOT, MO(_SYS),
+    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L,        KC_Y,        KC_P,        KC_B,        KC_Z, KC_F,        KC_O,        KC_U,        KC_DQT, MO(_SYS),
                                  QK_LLCK, KC_C, CTL_T(KC_R), LALT_T(KC_S), GUI_T(KC_T), KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A,    QK_LLCK,
-                                 KC_TAB,  KC_Q, KC_J,        KC_V,        KC_D,        KC_K,        KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_SCLN,
-                                                     LT(_NAV, KC_ESC), KC_SPC,  MAGIC_REPEAT,  OSM(MOD_RSFT),  KC_BSPC, LT(_NAV, KC_ENT)),
+                                 KC_TAB,  KC_Q, KC_J,        KC_V,        KC_D,        KC_K,        KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_GRV,
+                                                     KC_ESC, LT(_NAV, KC_SPC),  OSM(MOD_LSFT),  MAGIC_REPEAT,  LT(_NAV, KC_BSPC), KC_ENT),
 
     [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_D), C(KC_U), G(KC_C), _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
                                 _______, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
                                 _______, G(KC_A), KC_PGDN, KC_PGUP, G(KC_V),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
                                                            _______, _______,  _______,     _______, _______, _______),
 
-    [_MOUSE] = LAYOUT_split_3x6_3(_______, _______, _______, MS_UP, _______, _______,   _______, _______, MS_WHLU, _______, _______, _______,
-                                  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, _______, _______, MS_WHLL, MS_WHLD, MS_WHLR, _______, _______,
-                                  _______, _______, _______, _______, _______, _______,   _______, _______, _______, _______, _______, _______,
-                                                           _______, MS_BTN2,  _______,     MS_BTN3, MS_BTN1, _______),
+    [_MOUSE] = LAYOUT_split_3x6_3(_______, _______, _______, MS_UP, _______, OSM(MOD_LGUI),   _______, _______, MS_WHLU, _______, _______, _______,
+                                  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, OSM(MOD_LALT), _______, MS_WHLL, MS_WHLD, MS_WHLR, _______, _______,
+                                  _______, _______, KC_VOLD, KC_MUTE, KC_VOLU, OSM(MOD_LCTL),   _______, MS_ACL1, MS_ACL0, MS_ACL2, _______, _______,
+                                                           MS_BTN3, MS_BTN1,  MS_BTN2,     _______, _______, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
                                 _______,  _______, _______, _______, _______, _______,      RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
@@ -60,10 +60,10 @@ const char chordal_hold_layout[MATRIX_ROWS][MATRIX_COLS] PROGMEM =
     );
 
 
-// Shift + esc = `
-const key_override_t tilde_esc_override = ko_make_basic(MOD_MASK_SHIFT, LT(_NAV, KC_ESC), KC_GRV);
-// GUI + esc = ~
-const key_override_t grave_esc_override = ko_make_basic(MOD_MASK_GUI, LT(_NAV, KC_ESC), S(KC_GRV));
+// Shift + Backspace = Del
+const key_override_t delete_key_override = ko_make_basic(MOD_MASK_SHIFT, LT(_NAV, KC_BSPC), KC_DEL);
+// Shift + " = '
+const key_override_t quote_override = ko_make_basic(MOD_MASK_SHIFT, KC_DQT, KC_QUOT);
 // Shift + . = :
 const key_override_t dot_colon_override = ko_make_basic(MOD_MASK_SHIFT, KC_DOT, KC_COLN);
 // Shift + , = ;
@@ -91,8 +91,8 @@ const key_override_t and_or_override = ko_make_basic(MOD_MASK_SHIFT, KC_AMPR, KC
 const key_override_t hash_dollar_override = ko_make_basic(MOD_MASK_SHIFT, KC_HASH, KC_DLR);
 
 const key_override_t *key_overrides[] = {
-	&tilde_esc_override,
-	&grave_esc_override,
+    &delete_key_override,
+    &quote_override,
     &dot_colon_override,
     &comma_semicolon_override,
     &question_exclamation_override,
@@ -122,8 +122,6 @@ bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
                 *remembered_mods &= ~MOD_MASK_SHIFT;
             }
             break;
-        case KC_ESC:
-        case LT(_NAV, KC_ESC):
         case MAGIC_REPEAT:
             return false;
     }
@@ -133,6 +131,10 @@ bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
 uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
     switch (keycode) {
         case KC_ASTR: return KC_HASH;
+        case KC_BSPC: return KC_DEL;
+        case KC_KP_SLASH: return KC_ASTR;
+        case KC_KP_ASTERISK: return KC_HASH;
+        case KC_HASH: return KC_KP_ASTERISK;
         case KC_DOT: return M_UPDIR;
         case KC_TAB:
             {
