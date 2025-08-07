@@ -10,15 +10,15 @@
 #endif
 
 #define _BASE 0
-#define _NAV 1
-#define _MOUSE 2
-#define _SYS 3
-#define MAGIC_REPEAT LT(_MOUSE, KC_0)
+#define _GAME 1
+#define _NAV 2
+#define _MOUSE 3
+#define _SYS 4
 
 // Custom keycodes
 enum custom_keycodes {
-    M_UPDIR = SAFE_RANGE,
-    VI_WQA,
+    // M_UPDIR = SAFE_RANGE,
+    VI_WQA = SAFE_RANGE,
     VI_ZQ,
     VI_W
 };
@@ -30,14 +30,19 @@ enum custom_keycodes {
  */
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
-    [_BASE] = LAYOUT_split_3x6_3(_______, KC_W, KC_L,        KC_Y,        KC_P,        KC_B,        KC_Z, KC_F,        KC_O,        KC_U,        KC_DQT, MO(_SYS),
-                                 QK_LLCK, KC_C, CTL_T(KC_R), LALT_T(KC_S), GUI_T(KC_T), KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A,    QK_LLCK,
-                                 KC_TAB,  KC_Q, KC_J,        KC_V,        KC_D,        KC_K,        KC_X, KC_H,        KC_COMM,     KC_DOT,      KC_QUES, KC_GRV,
-                                                     KC_ESC, LT(_NAV, KC_SPC),  OSM(MOD_LSFT),  MAGIC_REPEAT,  LT(_NAV, KC_BSPC), KC_ENT),
+    [_BASE] = LAYOUT_split_3x6_3(_______,   KC_W, KC_L, KC_Y, KC_P, KC_B,        KC_Z, KC_F, KC_O, KC_U, KC_DQT, MO(_SYS),
+                                 QK_LLCK,   KC_C, KC_R, KC_S, KC_T, KC_G,        KC_M, KC_N, KC_E, KC_I, KC_A,   QK_LLCK,
+                                 TG(_MOUSE),KC_Q, KC_J, KC_V, KC_D, KC_K,        KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_GAME),
+                                            KC_ESC, LT(_NAV, KC_SPC), ALT_T(KC_TAB),  OSM(MOD_LSFT),   CTL_T(KC_BSPC), GUI_T(KC_ENT)),
 
-    [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_D), C(KC_U), G(KC_C), _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, _______, _______,
-                                _______, KC_LEFT, KC_DOWN, KC_UP, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
-                                _______, G(KC_A), KC_PGDN, KC_PGUP, G(KC_V),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, _______, _______,
+    [_GAME] = LAYOUT_split_3x6_3(KC_ESC, KC_W, KC_L, KC_Y, KC_P, KC_B,       KC_Z, KC_F, KC_O, KC_U, KC_DQT, MO(_SYS),
+                                 KC_P3, KC_C, KC_R, KC_S, KC_T, KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A, QK_LLCK,
+                                 KC_TAB,  KC_Q, KC_J, KC_V, KC_D, KC_K,       KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_BASE),
+                                                     KC_P1, LT(_NAV, KC_SPC),  LSFT_T(KC_P2),  LT(_MOUSE, KC_TAB),  LT(_NAV, KC_BSPC), KC_ENT),
+
+    [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_U), C(KC_D), C(KC_P), _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, OSM(MOD_RGUI), _______,
+                                _______, KC_LEFT, KC_UP, KC_DOWN, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, OSM(MOD_RALT), _______,
+                                _______, G(KC_A), KC_PGUP, KC_PGDN, C(KC_N),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, OSM(MOD_RCTL), _______,
                                                            _______, _______,  _______,     _______, _______, _______),
 
     [_MOUSE] = LAYOUT_split_3x6_3(_______, _______, _______, MS_UP, _______, OSM(MOD_LGUI),   _______, _______, MS_WHLU, _______, _______, _______,
@@ -60,8 +65,8 @@ const char chordal_hold_layout[MATRIX_ROWS][MATRIX_COLS] PROGMEM =
     );
 
 
-// Shift + Backspace = Del
-const key_override_t delete_key_override = ko_make_basic(MOD_MASK_SHIFT, LT(_NAV, KC_BSPC), KC_DEL);
+// Alt + Backspace = Del
+const key_override_t delete_key_override = ko_make_basic(MOD_MASK_ALT, CTL_T(KC_BSPC), KC_DEL);
 // Shift + " = '
 const key_override_t quote_override = ko_make_basic(MOD_MASK_SHIFT, KC_DQT, KC_QUOT);
 // Shift + . = :
@@ -114,40 +119,42 @@ bool get_combo_must_tap(uint16_t combo_index, combo_t *combo) {
 }
 #endif
 
-bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
-                            uint8_t* remembered_mods) {
-    switch (keycode) {
-        case KC_A ... KC_Z:
-            if ((*remembered_mods & ~MOD_MASK_SHIFT) == 0) {
-                *remembered_mods &= ~MOD_MASK_SHIFT;
-            }
-            break;
-        case MAGIC_REPEAT:
-            return false;
-    }
-    return true;  // Other keys can be repeated.
-}
-
-uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
-    switch (keycode) {
-        case KC_ASTR: return KC_HASH;
-        case KC_BSPC: return KC_DEL;
-        case KC_KP_SLASH: return KC_ASTR;
-        case KC_KP_ASTERISK: return KC_HASH;
-        case KC_HASH: return KC_KP_ASTERISK;
-        case KC_DOT: return M_UPDIR;
-        case KC_TAB:
-            {
-                bool shifted = (mods & MOD_MASK_SHIFT);
-                if (shifted) {        // If the last key was Shift + Tab,
-                    return KC_TAB;    // ... the reverse is Tab.
-                } else {              // Otherwise, the last key was Tab,
-                    return S(KC_TAB); // ... and the reverse is Shift + Tab.
-                }
-            }
-    }
-    return KC_TRNS;
-}
+// bool remember_last_key_user(uint16_t keycode, keyrecord_t* record,
+//                             uint8_t* remembered_mods) {
+//     switch (keycode) {
+//         case KC_A ... KC_Z:
+//             if ((*remembered_mods & ~MOD_MASK_SHIFT) == 0) {
+//                 *remembered_mods &= ~MOD_MASK_SHIFT;
+//             }
+//             break;
+//         case MAGIC_REPEAT:
+//             return false;
+//     }
+//     return true;  // Other keys can be repeated.
+// }
+//
+// uint16_t get_alt_repeat_key_keycode_user(uint16_t keycode, uint8_t mods) {
+//     switch (keycode) {
+//         case MS_WHLU: return MS_WHLD;
+//         case MS_WHLD: return MS_WHLU;
+//         case KC_ASTR: return KC_HASH;
+//         case KC_BSPC: return KC_DEL;
+//         case KC_KP_SLASH: return KC_ASTR;
+//         case KC_KP_ASTERISK: return KC_HASH;
+//         case KC_HASH: return KC_KP_ASTERISK;
+//         case KC_DOT: return M_UPDIR;
+//         case KC_TAB:
+//             {
+//                 bool shifted = (mods & MOD_MASK_SHIFT);
+//                 if (shifted) {        // If the last key was Shift + Tab,
+//                     return KC_TAB;    // ... the reverse is Tab.
+//                 } else {              // Otherwise, the last key was Tab,
+//                     return S(KC_TAB); // ... and the reverse is Shift + Tab.
+//                 }
+//             }
+//     }
+//     return KC_TRNS;
+// }
 
 bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode, keyrecord_t *record) {
     if (layer_state_is(_MOUSE)) {
@@ -158,24 +165,24 @@ bool combo_should_trigger(uint16_t combo_index, combo_t *combo, uint16_t keycode
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
-        case MAGIC_REPEAT:
-            if (record->tap.count) {
-                uint8_t mod_state = get_mods();
-                if (mod_state & MOD_MASK_SHIFT) {
-                    del_mods(MOD_MASK_SHIFT);
-                    alt_repeat_key_invoke(&record->event);
-                    set_mods(mod_state);
-                } else {
-                    repeat_key_invoke(&record->event);
-                }
-                return false;
-            }
-            return true;
-        case M_UPDIR:
-            if (record->event.pressed) {
-                SEND_STRING("./");
-            }
-            return false;
+        // case MAGIC_REPEAT:
+        //     if (record->tap.count) {
+        //         uint8_t mod_state = get_mods();
+        //         if (mod_state & MOD_MASK_SHIFT) {
+        //             del_mods(MOD_MASK_SHIFT);
+        //             alt_repeat_key_invoke(&record->event);
+        //             set_mods(mod_state);
+        //         } else {
+        //             repeat_key_invoke(&record->event);
+        //         }
+        //         return false;
+        //     }
+        //     return true;
+        // case M_UPDIR:
+        //     if (record->event.pressed) {
+        //         SEND_STRING("./");
+        //     }
+        //     return false;
         case VI_W:
             if (record->event.pressed) {
                 SEND_STRING(":w\n"); return true;
