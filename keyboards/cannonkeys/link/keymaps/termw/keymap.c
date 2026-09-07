@@ -88,8 +88,8 @@ const key_override_t *key_overrides[] = {
  * pages). The Sofle renders them with a single oled_write_raw_P into a 32-wide
  * canvas; the Link master is 64 wide at OLED_ROTATION_0, so a 96-byte linear
  * write would wrap. We instead blit the sprite as three 32-byte page-rows at
- * column 0. Luna reacts to WPM (sit/walk/run), barks on Caps Lock, and sneaks
- * while Ctrl is held. On-screen position/orientation may need an on-device tweak.
+ * column 0. Luna reacts to WPM (sit/walk/run), barks on Caps Lock or Caps Word,
+ * sneaks while Ctrl is held, and jumps while Space is held. On-screen position/orientation may need an on-device tweak.
  * ========================================================================== */
 #ifdef OLED_ENABLE
 
@@ -97,12 +97,15 @@ const key_override_t *key_overrides[] = {
 #    define LUNA_MIN_RUN_SPEED  40
 #    define LUNA_FRAME_DURATION 200  // ms per frame
 #    define LUNA_ANIM_SIZE      96   // bytes per frame (32x22 -> 32 cols x 3 pages)
+#    define LUNA_JUMP           2    // pages the sprite hops up on Space
 
-static uint32_t luna_anim_timer = 0;
-static uint8_t  luna_frame      = 0;
-static int      luna_wpm        = 0;
+static uint32_t luna_anim_timer  = 0;
+static uint8_t  luna_frame       = 0;
+static int      luna_wpm         = 0;
 static led_t    luna_led_state;
-static bool     luna_sneaking   = false;
+static bool     luna_sneaking    = false;
+static bool     luna_jumping     = false;
+static bool     luna_showed_jump = true;
 
 // clang-format off
 static const char PROGMEM luna_sit[2][LUNA_ANIM_SIZE] = {
@@ -127,7 +130,22 @@ static const char PROGMEM luna_sneak[2][LUNA_ANIM_SIZE] = {
 };
 // clang-format on
 
-// Blit the current Luna frame at column 0, occupying pages base_page..base_page+2.
+// Expand a byte's 8 bits to 16 bits, doubling each bit (for 2x vertical scale).
+// Bit i of the input maps to bits 2i and 2i+1 of the output, preserving the
+// OLED page bit order (LSB = topmost pixel).
+static uint16_t luna_expand_byte(uint8_t x) {
+    uint16_t r = 0;
+    for (uint8_t i = 0; i < 8; i++) {
+        if (x & (1u << i)) {
+            r |= (uint16_t)0x3 << (2 * i);
+        }
+    }
+    return r;
+}
+
+// Render the current Luna frame scaled 2x: the 32x24 (3-page) sprite becomes
+// 64x48 (6-page), filling the full master width. Both axes are exact integer
+// doublings (32->64 wide, 24->48 tall = 6 pages), so it stays page-aligned.
 static void render_luna(uint8_t base_page) {
     if (timer_elapsed32(luna_anim_timer) <= LUNA_FRAME_DURATION) {
         return;
@@ -136,7 +154,7 @@ static void render_luna(uint8_t base_page) {
     luna_frame      = (luna_frame + 1) % 2;
 
     const char *f;
-    if (luna_led_state.caps_lock) {
+    if (luna_led_state.caps_lock || is_caps_word_on()) {
         f = luna_bark[luna_frame];
     } else if (luna_sneaking) {
         f = luna_sneak[luna_frame];
@@ -148,13 +166,75 @@ static void render_luna(uint8_t base_page) {
         f = luna_run[luna_frame];
     }
 
-    for (uint8_t r = 0; r < 3; r++) {
-        oled_set_cursor(0, base_page + r);
-        oled_write_raw_P(f + r * 32, 32);
+    // Build the 6 scaled page-rows (64 bytes each). For each source column we
+    // double it into two dest columns; for each source page byte we expand its
+    // 8 bits into 16 (two dest page bytes).
+    uint8_t dest[6][64];
+    for (uint8_t c = 0; c < 32; c++) {
+        uint8_t dcol[6];
+        for (uint8_t p = 0; p < 3; p++) {
+            uint16_t e     = luna_expand_byte(pgm_read_byte(f + p * 32 + c));
+            dcol[2 * p]     = e & 0xFF;
+            dcol[2 * p + 1] = (e >> 8) & 0xFF;
+        }
+        for (uint8_t p = 0; p < 6; p++) {
+            dest[p][2 * c]     = dcol[p];
+            dest[p][2 * c + 1] = dcol[p];
+        }
+    }
+    // Jump: hop the sprite up by LUNA_JUMP pages while Space is held (and at
+    // least once per tap, via luna_showed_jump). Clear the pages the sprite
+    // vacates so no ghost is left behind.
+    uint8_t dp = base_page;
+    if (luna_jumping || !luna_showed_jump) {
+        dp               = base_page - LUNA_JUMP;
+        luna_showed_jump = true;
+    }
+    uint8_t blank[64] = {0};
+    for (uint8_t p = base_page - LUNA_JUMP; p <= base_page + 5; p++) {
+        if (p < dp || p > dp + 5) {
+            oled_set_cursor(0, p);
+            oled_write_raw((const char *)blank, 64);
+        }
+    }
+    for (uint8_t p = 0; p < 6; p++) {
+        oled_set_cursor(0, dp + p);
+        oled_write_raw((const char *)dest[p], 64);
     }
 }
 
-// Master half: WPM counter, Caps Lock indicator, and Luna.
+// Write a string horizontally centered on the given page line, padded with
+// spaces to the full line width so any previous (longer) text is cleared.
+static void oled_write_centered(uint8_t line, const char *str, bool invert) {
+    char    buf[17];
+    uint8_t max = oled_max_chars();
+    if (max > 16) {
+        max = 16;
+    }
+    uint8_t len = strlen(str);
+    if (len > max) {
+        len = max;
+    }
+    // Round the left pad up so odd remainders bias right, compensating for the
+    // few unused pixels on the right edge (width isn't an exact multiple of the
+    // font width). Keeps 3-char strings like "WPM"/the WPM number centered.
+    uint8_t pad = (max - len + 1) / 2;
+    uint8_t i   = 0;
+    for (; i < pad; i++) {
+        buf[i] = ' ';
+    }
+    for (uint8_t j = 0; j < len; j++) {
+        buf[i++] = str[j];
+    }
+    for (; i < max; i++) {
+        buf[i] = ' ';
+    }
+    buf[i] = '\0';
+    oled_set_cursor(0, line);
+    oled_write(buf, invert);
+}
+
+// Master half: WPM counter, Caps indicator, and Luna. Text is centered.
 static void render_master(void) {
     uint8_t n = (uint8_t)luna_wpm;
     char    wpm_str[4];
@@ -163,42 +243,117 @@ static void render_master(void) {
     wpm_str[1] = '0' + (n /= 10) % 10;
     wpm_str[0] = '0' + n / 10;
 
-    oled_set_cursor(0, 0);
-    oled_write_P(PSTR("WPM"), false);
-    oled_set_cursor(0, 1);
-    oled_write(wpm_str, false);
+    oled_write_centered(1, "WPM", false);
+    oled_write_centered(2, wpm_str, false);
+    oled_write_centered(4, (luna_led_state.caps_lock || is_caps_word_on()) ? "CAPS" : "", false);
 
-    oled_set_cursor(0, 3);
-    oled_write_P(PSTR("CAPS"), luna_led_state.caps_lock);
-
-    render_luna(13);
+    render_luna(9);
 }
 
-// Secondary half: active layer name, matching the keymap (BASE / NUM / SYS).
-static void render_slave(void) {
-    oled_set_cursor(0, 0);
-    oled_write_P(PSTR("LAYER"), false);
-    oled_set_cursor(0, 2);
-    switch (get_highest_layer(layer_state)) {
-        case 0:
-            oled_write_P(PSTR("BASE"), false);
-            break;
-        case 1:
-            oled_write_P(PSTR("NUM "), false);
-            break;
-        case 2:
-            oled_write_P(PSTR("SYS "), false);
-            break;
-        default:
-            oled_write_P(PSTR("????"), false);
+// Matrix-style digital rain for the lower part of the slave OLED. Driven by WPM
+// (synced across the split), so it speeds up as you type. Fixed columns, each a
+// lit head with a short trailing streak; the tail pixel is erased every step so
+// nothing accumulates.
+#define RAIN_COLS   8
+#define RAIN_TOP    16   // page 2: below the top margin (page 0) and name (page 1)
+#define RAIN_BOTTOM 119  // page 14: leave the bottom page (15) as margin
+#define RAIN_TRAIL  6
+
+static uint8_t  rain_head[RAIN_COLS];
+static bool     rain_ready = false;
+static uint16_t rain_frame = 0;
+static uint32_t rain_timer = 0;
+
+static void render_rain(void) {
+    static const uint8_t period[RAIN_COLS] = {1, 2, 1, 3, 2, 3, 1, 2};  // per-column speed divisor
+
+    if (!rain_ready) {
+        for (uint8_t i = 0; i < RAIN_COLS; i++) {
+            rain_head[i] = RAIN_TOP + (uint8_t)((i * 13) % (RAIN_BOTTOM - RAIN_TOP));
+        }
+        rain_ready = true;
+    }
+
+    uint8_t  wpm      = get_current_wpm();
+    uint16_t interval = (wpm > LUNA_MIN_RUN_SPEED) ? 25 : (wpm > LUNA_MIN_WALK_SPEED ? 45 : 80);
+    if (timer_elapsed32(rain_timer) <= interval) {
+        return;
+    }
+    rain_timer = timer_read32();
+    rain_frame++;
+
+    for (uint8_t i = 0; i < RAIN_COLS; i++) {
+        if (rain_frame % period[i] != 0) {
+            continue;  // this column doesn't advance this frame
+        }
+        uint8_t x    = 3 + i * 8;
+        int16_t tail = (int16_t)rain_head[i] - RAIN_TRAIL;
+        if (tail >= RAIN_TOP && tail <= RAIN_BOTTOM) {
+            oled_write_pixel(x, (uint8_t)tail, false);
+        }
+        int16_t nh = (int16_t)rain_head[i] + 1;
+        if (nh - RAIN_TRAIL > RAIN_BOTTOM) {
+            for (uint8_t y = RAIN_TOP; y <= RAIN_BOTTOM; y++) {
+                oled_write_pixel(x, y, false);  // clear column on wrap
+            }
+            nh = RAIN_TOP + (i * 5) % 10;
+        }
+        rain_head[i] = (uint8_t)nh;
+        if (rain_head[i] >= RAIN_TOP && rain_head[i] <= RAIN_BOTTOM) {
+            oled_write_pixel(x, rain_head[i], true);
+        }
     }
 }
 
+// Secondary half: active layer name (BASE / NUM / SYS) plus digital rain.
+static void render_slave(void) {
+    const char *name;
+    switch (get_highest_layer(layer_state)) {
+        case 0:
+            name = "Base";
+            break;
+        case 1:
+            name = "Num";
+            break;
+        case 2:
+            name = "Sys";
+            break;
+        default:
+            name = "?";
+            break;
+    }
+    oled_write_centered(1, name, false);
+    render_rain();
+}
+
+// Force both halves to portrait (OLED_ROTATION_0) so the slave's layer readout
+// matches the master's Luna orientation. link.c chains here for the rotation.
+oled_rotation_t oled_init_user(oled_rotation_t rotation) {
+    return OLED_ROTATION_0;
+}
+
 bool oled_task_user(void) {
-    luna_wpm       = get_current_wpm();
-    luna_led_state = host_keyboard_led_state();
+#if OLED_TIMEOUT > 0
+    // Only the MASTER decides sleep/wake. The on/off state is mirrored to the
+    // slave via split.transport.sync.oled, so if the slave also toggled the
+    // panel from its own activity timers it would fight the sync and flicker
+    // (notably when Caps Lock is toggled from the host keyboard, which wakes the
+    // master but not the slave's timers). Both halves skip drawing while off.
+    if (is_keyboard_master()) {
+        if (last_input_activity_elapsed() > OLED_TIMEOUT && last_led_activity_elapsed() > OLED_TIMEOUT) {
+            oled_off();
+        } else {
+            oled_on();
+        }
+    }
+    if (!is_oled_on()) {
+        return false;
+    }
+#endif
 
     if (is_keyboard_master()) {
+        luna_wpm       = get_current_wpm();
+        luna_led_state = host_keyboard_led_state();
         render_master();
     } else {
         render_slave();
@@ -207,14 +362,24 @@ bool oled_task_user(void) {
 }
 #endif  // OLED_ENABLE
 
-// Luna sneaks while Ctrl is held.
+// Luna sneaks while Ctrl is held and jumps while Space is held.
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+#ifdef OLED_ENABLE
     switch (keycode) {
         case KC_LCTL:
         case KC_RCTL:
             luna_sneaking = record->event.pressed;
             break;
+        case LT(1, KC_SPC):
+            if (record->event.pressed) {
+                luna_jumping     = true;
+                luna_showed_jump = false;
+            } else {
+                luna_jumping = false;
+            }
+            break;
     }
+#endif
     return true;
 }
 

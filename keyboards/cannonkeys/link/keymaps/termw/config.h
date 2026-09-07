@@ -32,3 +32,8 @@
 #define CAPS_WORD_INVERT_ON_SHIFT
 #define CAPS_WORD_IDLE_TIMEOUT 3000  // 3 seconds.
 #define DOUBLE_TAP_SHIFT_TURNS_ON_CAPS_WORD
+
+// Sleep the OLED after this many ms with no input (burn-in protection); it wakes
+// on the next keypress. The continuous Luna/rain animation is gated on this in
+// oled_task_user.
+#define OLED_TIMEOUT 60000

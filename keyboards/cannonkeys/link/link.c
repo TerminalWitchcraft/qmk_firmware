@@ -5,12 +5,10 @@
 
 #ifdef OLED_ENABLE
 oled_rotation_t oled_init_kb(oled_rotation_t rotation) {
-    if (is_keyboard_master()) {
-        return OLED_ROTATION_0;
-    } else {
-        return OLED_ROTATION_90;
-    }
-    return rotation;
+    oled_rotation_t rot = is_keyboard_master() ? OLED_ROTATION_0 : OLED_ROTATION_90;
+    // Chain to the keymap so a keymap can override rotation (e.g. termw makes
+    // both halves portrait). Keymaps without oled_init_user leave rot unchanged.
+    return oled_init_user(rot);
 }
 
 static void render_logo(void) {
