@@ -11,9 +11,10 @@
 
 #define _BASE 0
 #define _GAME 1
-#define _NAV 2
-#define _MOUSE 3
-#define _SYS 4
+#define _NUM 2
+#define _NAV 3
+#define _MOUSE 4
+#define _SYS 5
 
 // Custom keycodes
 enum custom_keycodes {
@@ -31,24 +32,24 @@ enum custom_keycodes {
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
     [_BASE] = LAYOUT_split_3x6_3(_______,   KC_W, KC_L, KC_Y, KC_P, KC_B,        KC_Z, KC_F, KC_O, KC_U, KC_DQT, MO(_SYS),
-                                 QK_LLCK,   KC_C, KC_R, KC_S, KC_T, KC_G,        KC_M, KC_N, KC_E, KC_I, KC_A,   QK_LLCK,
-                                 TG(_MOUSE),KC_Q, KC_J, KC_V, KC_D, KC_K,        KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_GAME),
-                                            KC_ESC, LT(_NAV, KC_SPC), ALT_T(KC_TAB),  OSM(MOD_LSFT),   CTL_T(KC_BSPC), GUI_T(KC_ENT)),
+                                 _______,   KC_C, CTL_T(KC_R), ALT_T(KC_S), GUI_T(KC_T), KC_G,        KC_M, GUI_T(KC_N), ALT_T(KC_E), CTL_T(KC_I), KC_A,   QK_LLCK,
+                                 _______,   KC_Q, KC_J, KC_V, KC_D, KC_K,        KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_GAME),
+                                            KC_ESC, LT(_NUM, KC_SPC), LT(_MOUSE, KC_TAB), OSM(MOD_LSFT),  LT(_NAV, KC_BSPC), KC_ENT),
 
     [_GAME] = LAYOUT_split_3x6_3(KC_ESC, KC_W, KC_L, KC_Y, KC_P, KC_B,       KC_Z, KC_F, KC_O, KC_U, KC_DQT, MO(_SYS),
-                                 KC_P3, KC_C, KC_R, KC_S, KC_T, KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A, QK_LLCK,
-                                 KC_TAB,  KC_Q, KC_J, KC_V, KC_D, KC_K,       KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_BASE),
-                                                     KC_P1, LT(_NAV, KC_SPC),  LSFT_T(KC_P2),  LT(_MOUSE, KC_TAB),  LT(_NAV, KC_BSPC), KC_ENT),
+                                 KC_RCTL, KC_C, KC_R, KC_S, KC_T, KC_G,        KC_M, GUI_T(KC_N), LALT_T(KC_E), CTL_T(KC_I), KC_A, QK_LLCK,
+                                 KC_P1,  KC_Q, KC_J, KC_V, KC_D, KC_K,       KC_X, KC_H, KC_COMM, KC_DOT, KC_QUES, DF(_BASE),
+                                                     KC_LALT, KC_SPC,  LSFT_T(KC_TAB),  LT(_MOUSE, KC_TAB),  LT(_NAV, KC_BSPC), KC_ENT),
 
-    [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_U), C(KC_D), C(KC_P), _______,     VI_WQA,  KC_P7, KC_P8, KC_P9, OSM(MOD_RGUI), _______,
-                                _______, KC_LEFT, KC_UP, KC_DOWN, KC_RIGHT, _______,      KC_P0,   KC_P4, KC_P5, KC_P6, OSM(MOD_RALT), _______,
-                                _______, G(KC_A), KC_PGUP, KC_PGDN, C(KC_N),  VI_W,       VI_ZQ,   KC_P1, KC_P2, KC_P3, OSM(MOD_RCTL), _______,
+    [_NUM] = LAYOUT_split_3x6_3(_______, _______, _______, _______, _______, _______,     _______,  KC_P7, KC_P8, KC_P9, _______, _______,
+                                _______, _______, OSM(MOD_LCTL), OSM(MOD_LALT), OSM(MOD_LGUI), _______,      KC_P0,   KC_P4, KC_P5, KC_P6, _______, _______,
+                                _______, _______, _______, _______, _______,  _______,     _______,   KC_P1, KC_P2, KC_P3, _______, _______,
                                                            _______, _______,  _______,     _______, _______, _______),
 
-    [_MOUSE] = LAYOUT_split_3x6_3(_______, _______, _______, MS_UP, _______, OSM(MOD_LGUI),   _______, _______, MS_WHLU, _______, _______, _______,
-                                  _______, _______, MS_LEFT, MS_DOWN, MS_RGHT, OSM(MOD_LALT), _______, MS_WHLL, MS_WHLD, MS_WHLR, _______, _______,
-                                  _______, _______, KC_VOLD, KC_MUTE, KC_VOLU, OSM(MOD_LCTL),   _______, MS_ACL1, MS_ACL0, MS_ACL2, _______, _______,
-                                                           MS_BTN3, MS_BTN1,  MS_BTN2,     _______, _______, _______),
+    [_NAV] = LAYOUT_split_3x6_3(_______, G(KC_X), C(KC_U), C(KC_D), C(KC_P), VI_WQA,     _______,  _______, _______, _______, _______, _______,
+                                _______, KC_LEFT, KC_UP, KC_DOWN, KC_RIGHT, VI_ZQ,      _______,   OSM(MOD_RGUI), OSM(MOD_RALT), OSM(MOD_RCTL), _______, _______,
+                                _______, G(KC_A), KC_PGUP, KC_PGDN, C(KC_N),  VI_W,       _______,   _______, _______, _______, _______, _______,
+                                                           _______, _______,  _______,     _______, _______, _______),
 
     [_SYS] = LAYOUT_split_3x6_3(QK_BOOT, _______, _______, _______, _______, _______,       RM_VALU, RM_HUEU, RM_SATU, RM_NEXT, RM_TOGG, QK_BOOT,
                                 _______,  _______, _______, _______, _______, _______,      RM_VALD, RM_HUED, RM_SATD, RM_PREV, CK_TOGG, _______,
