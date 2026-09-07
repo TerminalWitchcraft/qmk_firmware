@@ -1,0 +1,33 @@
+// Combo dictionary for the termw keymap, consumed by the gboards generator
+// (see rules.mk: VPATH += keyboards/gboards, and keymap.c: #include "g/keymap_combo.h").
+//
+// Format: COMB(name, result_keycode, chord_key1, chord_key2, ...)
+//
+// Ported from boardsource/unicorne termw combos.def. The corne chords used
+// home-row-mod keycodes (e.g. CTL_T(KC_R)); the link base layer has no
+// home-row mods, so the chord keys here are the plain letters.
+
+//    name             result        chord keys
+// Both encoder push switches together -> middle click.
+COMB(ENC_MIDDLE_CLICK, MS_BTN3,       MS_BTN2, MS_BTN1)
+
+COMB(NO_FSLASH,        KC_KP_SLASH,   KC_N, KC_O)
+COMB(OI_BSLASH,        KC_BACKSLASH,  KC_O, KC_I)
+
+COMB(YP_LCBR,          KC_LCBR,       KC_Y, KC_P)
+COMB(ST_LPRN,          KC_LPRN,       KC_S, KC_T)
+COMB(VD_LT,            KC_LT,         KC_V, KC_D)
+
+COMB(FO_RCBR,          KC_RCBR,       KC_F, KC_O)
+COMB(NE_RPRN,          KC_RPRN,       KC_N, KC_E)
+COMB(HCOMM_GT,         KC_GT,         KC_H, KC_COMM)
+
+COMB(OU_EQL,           KC_PEQL,       KC_O, KC_U)
+COMB(EI_MINS,          KC_PMNS,       KC_E, KC_I)
+COMB(COMMDOT_UNDS,     KC_UNDS,       KC_COMM, KC_DOT)
+
+COMB(LY_AMPR,          KC_AMPR,       KC_L, KC_Y)
+COMB(RS_AT,            KC_AT,         KC_R, KC_S)
+COMB(JV_HASH,          KC_HASH,       KC_J, KC_V)
+
+COMB(YT_GRV,           KC_GRV,        KC_Y, KC_T)
