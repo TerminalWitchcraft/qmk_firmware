@@ -37,3 +37,5 @@
 // on the next keypress. The continuous Luna/rain animation is gated on this in
 // oled_task_user.
 #define OLED_TIMEOUT 60000
+
+#define ONESHOT_TIMEOUT 2000

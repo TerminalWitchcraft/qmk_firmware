@@ -4,33 +4,39 @@
 #include QMK_KEYBOARD_H
 #include "g/keymap_combo.h"
 
+#define _BASE 0
+#define _SYS 1
+#define _NUM 2
+
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
-[0] = LAYOUT(
+[_BASE] = LAYOUT(
   KC_ESC,  KC_1,    KC_2,    KC_3,    KC_4,  KC_5,                     KC_6,    KC_7,   KC_8,    KC_9,    KC_0,    KC_MINS,
   KC_GRV,  KC_W,    KC_L,    KC_Y,    KC_P,  KC_B,                     KC_Z,    KC_F,   KC_O,    KC_U,    KC_DQT,  KC_BSPC,
-  KC_LCTL,  KC_C,    KC_R,    KC_S,    KC_T,  KC_G,                     KC_M,    KC_N,   KC_E,    KC_I,    KC_A,    KC_RCTL,
-  KC_LALT, KC_Q,    KC_J,    KC_V,    KC_D,  KC_K,   MS_BTN2, MS_BTN1, KC_X,    KC_H,   KC_COMM, KC_DOT,  KC_QUES, KC_RALT,
-           KC_LALT, KC_LGUI, KC_ESC,  LT(1, KC_SPC), KC_TAB,         OSM(MOD_LSFT), LT(2, KC_BSPC), KC_ENT, KC_RGUI, KC_RALT
+  KC_LALT,  KC_C,    KC_R,    KC_S,    KC_T,  KC_G,                     KC_M,    KC_N,   KC_E,    KC_I,    KC_A,    KC_RCTL,
+  KC_LCTL, KC_Q,    KC_J,    KC_V,    KC_D,  KC_K,   MS_BTN2, MS_BTN1, KC_X,    KC_H,   KC_COMM, KC_DOT,  KC_QUES, KC_RALT,
+           EC_NORM, QK_REPEAT_KEY, MT(MOD_LGUI, KC_ESC),  LT(2, KC_SPC), KC_TAB,         OSM(MOD_LSFT), LT(1, KC_BSPC), MT(MOD_RGUI, KC_ENT), QK_ALT_REPEAT_KEY, EC_SWAP
 ),
 
+
+[_SYS] = LAYOUT(
+  KC_F11,  KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,                      KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,  KC_F12,
+  QK_BOOT, KC_TRNS,  KC_HOME,  KC_UP,  KC_END,  KC_TRNS,                    KC_PGUP,  KC_HOME,  KC_UP,    KC_END,   KC_INS,  KC_DEL,
+  KC_TRNS, KC_TRNS,  KC_LEFT,  KC_DOWN,  KC_RIGHT,  KC_TRNS,                    KC_PGDN,  OSM(MOD_RSFT),  OSM(MOD_RGUI),  OSM(MOD_RALT), OSM(MOD_RCTL), KC_TRNS,
+  KC_TRNS, KC_TRNS,  KC_PGUP,  KC_TRNS,  KC_PGDN,  KC_TRNS, KC_MUTE,  KC_MPLY, KC_CAPS,  KC_PGUP,  KC_MPRV,  KC_MNXT,  KC_PSCR, KC_TRNS,
+           KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,                    KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS
+),
 // _NUM (ported from boardsource/unicorne termw): right-hand numpad,
 // one-shot CTL/ALT/GUI on the left home-row mod fingers.
-[1] = LAYOUT(
+[_NUM] = LAYOUT(
   KC_F11,  KC_F1,   KC_F2,         KC_F3,         KC_F4,         KC_F5,                     KC_F6,   KC_F7,   KC_F8,   KC_F9,   KC_F10,  KC_F12,
   KC_TRNS, KC_TRNS, KC_TRNS,       KC_TRNS,       KC_TRNS,       KC_TRNS,                   KC_TRNS, KC_P7,   KC_P8,   KC_P9,   KC_TRNS, KC_TRNS,
-  KC_TRNS, KC_TRNS, OSM(MOD_LCTL), OSM(MOD_LALT), OSM(MOD_LGUI), KC_TRNS,                   KC_P0,   KC_P4,   KC_P5,   KC_P6,   KC_TRNS, KC_TRNS,
+  KC_TRNS, OSM(MOD_LCTL), OSM(MOD_LALT), OSM(MOD_LGUI), OSM(MOD_LSFT), KC_TRNS,                   KC_P0,   KC_P4,   KC_P5,   KC_P6,   KC_TRNS, KC_TRNS,
   KC_TRNS, KC_TRNS, KC_TRNS,       KC_TRNS,       KC_TRNS,       KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_P1,   KC_P2,   KC_P3,   KC_TRNS, KC_TRNS,
            KC_TRNS, KC_TRNS,       KC_TRNS,       KC_TRNS,       KC_TRNS,                   KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS, KC_TRNS
-),
-
-[2] = LAYOUT(
-  KC_F11,  KC_F1,    KC_F2,    KC_F3,    KC_F4,    KC_F5,                      KC_F6,    KC_F7,    KC_F8,    KC_F9,    KC_F10,  KC_F12,
-  QK_BOOT, KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,                    KC_PGUP,  KC_HOME,  KC_UP,    KC_END,   KC_INS,  KC_DEL,
-  KC_TRNS, KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,                    KC_PGDN,  KC_LEFT,  KC_DOWN,  KC_RIGHT, KC_TRNS, KC_TRNS,
-  KC_TRNS, KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS, KC_MUTE,  KC_MPLY, KC_CAPS,  KC_PGUP,  KC_MPRV,  KC_MNXT,  KC_PSCR, KC_TRNS,
-           KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,                    KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS,  KC_TRNS
 )
+
 };
 
 // Combos are defined in combos.def and expanded by the include of
@@ -309,17 +315,17 @@ static void render_rain(void) {
 static void render_slave(void) {
     const char *name;
     switch (get_highest_layer(layer_state)) {
-        case 0:
+        case _BASE:
             name = "Base";
             break;
-        case 1:
+        case _NUM:
             name = "Num";
             break;
-        case 2:
+        case _SYS:
             name = "Sys";
             break;
         default:
-            name = "?";
+            name = "???";
             break;
     }
     oled_write_centered(1, name, false);
